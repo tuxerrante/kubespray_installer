@@ -16,6 +16,12 @@ Changed:
 - inventory\expert\inventory.ini
 
 Added:
+- delivery-reader in roles/adduser/defaults
+
+TODO:
+- delivery-deployer user
+- Roles and RolesBinding for delivery users to delivery namespace
+- Deploy and configure linkerd
 
 
 ## Test 
