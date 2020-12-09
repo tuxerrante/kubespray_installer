@@ -13,7 +13,7 @@ if [ "$SELINUXSTATUS" == "Enforcing" ]; then
     sudo setenforce 0 && sudo sed -i s/^SELINUX=.*$/SELINUX=permissive/ /etc/selinux/config
     echo "SELINUX set to permissive, please reboot the machine."
     exit 0
-fi;
+fi
 
 # Check firewall status
 FWSTATUS=$(sudo systemctl status firewalld >/dev/null);
@@ -27,7 +27,7 @@ if [ "$FWSTATUS" == "running" ]; then
     firewall-cmd --permanent --add-port=10257/tcp       # kube-controll
     firewall-cmd --permanent --add-port=10259/tcp       # kube-schedule
     firewall-cmd –-reload
-fi;
+fi
 
 
 # Useful for ansible administrators
@@ -52,7 +52,8 @@ cp -rfp ../roles/adduser/defaults/main.yml roles/adduser/defaults/main.yml
 my_ip=$(hostname -i)
 declare -a IPS="($my_ip)"
 
-CONFIG_FILE=inventory/expert/hosts.yaml python3 contrib/inventory_builder/inventory.py "${IPS[@]}"
+# To generate a new YAML inventory uncomment this line
+# CONFIG_FILE=inventory/expert/hosts.yaml python3 contrib/inventory_builder/inventory.py "${IPS[@]}"
 
 # Review and change parameters under ``inventory/expert/group_vars``
 # cat inventory/expert/group_vars/all/all.yml
