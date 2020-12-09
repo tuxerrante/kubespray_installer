@@ -47,6 +47,7 @@ cp -rfp ../inventory/expert inventory/
 # Add custom users
 cp -rfp ../roles/adduser/defaults/main.yml roles/adduser/defaults/main.yml
 
+###########################################################
 # Update Ansible inventory file with inventory builder
 # declare -a IPS=(10.10.1.3 10.10.1.4 10.10.1.5)
 my_ip=$(hostname -i)
@@ -54,6 +55,8 @@ declare -a IPS="($my_ip)"
 
 # To generate a new YAML inventory uncomment this line
 # CONFIG_FILE=inventory/expert/hosts.yaml python3 contrib/inventory_builder/inventory.py "${IPS[@]}"
+###########################################################
+
 
 # Review and change parameters under ``inventory/expert/group_vars``
 # cat inventory/expert/group_vars/all/all.yml
