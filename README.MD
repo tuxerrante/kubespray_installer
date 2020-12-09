@@ -1,3 +1,6 @@
+## Kubespray installer
+Here you can find the original repo: https://github.com/kubernetes-sigs/kubespray
+
 ## Customizations
 
 Enabled:
@@ -18,7 +21,7 @@ Changed:
 Added:
 - delivery-reader in roles/adduser/defaults
 
-TODO:
+## TODO
 - delivery-deployer user
 - Roles and RolesBinding for delivery users to delivery namespace
 - Deploy and configure linkerd
