@@ -104,11 +104,14 @@ fi
 # installing packages and interacting with various systemd daemons.
 ansible-playbook -i inventory/expert/hosts.yaml --become --become-user=root cluster.yml
 
-# Install and enable k8s dashboard | Still to test!
-sudo /usr/local/bin/kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.5/aio/deploy/recommended.yaml
-sudo /usr/local/bin/kubectl proxy --address='0.0.0.0'
-echo -e "\n# please paste the following line on your workstation...\nssh -L 9999:127.0.0.1:8001 -N -f -l dashboard-admin $(hostname -i) "-L" local port forwarding\n\n# and paste the following token to get access to the dashboard\n`sudo /usr/local/bin/kubectl describe secret $(sudo /usr/local/bin/kubectl get secret | grep 'dashboard-admin' | awk '{print $1}') | grep 'token:' | awk -F':      ' '{print $2}'`"
-
+# Enable kubectl configuration
 mkdir -p "$HOME/.kube"
 sudo cp -f -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
 sudo chown "$(id -u):$(id -g)" "$HOME/.kube/config"
+
+# Install and enable k8s dashboard | Still to test!
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.5/aio/deploy/recommended.yaml
+kubectl proxy --address='0.0.0.0'
+echo -e "\n# please paste the following line on your workstation...\nssh -L 8001:127.0.0.1:8001 $(hostname -i)\n\n# and paste the following token to get access to the dashboard\n`sudo /usr/local/bin/kubectl describe secret $(sudo /usr/local/bin/kubectl get secret | grep 'dashboard-admin' | awk '{print $1}') | grep 'token:' | awk -F':      ' '{print $2}'`"
+
+
