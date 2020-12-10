@@ -15,8 +15,8 @@ if [ "$SELINUXSTATUS" == "Enforcing" ]; then
     exit 0
 fi
 
-# Check firewall status
-FWSTATUS=$(sudo systemctl status firewalld >/dev/null);
+# Check firewall status and add rules
+FWSTATUS=$(sudo firewall-cmd --state);
 if [ "$FWSTATUS" == "running" ]; then
     sudo firewall-cmd --permanent --add-port=6443/tcp        # kubelet
     sudo firewall-cmd --permanent --add-port=10250/tcp
@@ -26,19 +26,31 @@ if [ "$FWSTATUS" == "running" ]; then
     sudo firewall-cmd --permanent --add-port=10255/tcp
     sudo firewall-cmd --permanent --add-port=10257/tcp       # kube-controll
     sudo firewall-cmd --permanent --add-port=10259/tcp       # kube-schedule
-    sudo firewall-cmd –-reload
+    sudo firewall-cmd --reload
+else
+    sudo yum install firewalld
+    sudo systemctl start firewalld
+    sudo systemctl enable firewalld
+    sudo firewall-cmd --permanent --add-port=6443/tcp        # kubelet
+    sudo firewall-cmd --permanent --add-port=10250/tcp
+    sudo firewall-cmd --permanent --add-port=2379-2380/tcp   # kube-apiserver
+    sudo firewall-cmd --permanent --add-port=10251/tcp
+    sudo firewall-cmd --permanent --add-port=10252/tcp
+    sudo firewall-cmd --permanent --add-port=10255/tcp
+    sudo firewall-cmd --permanent --add-port=10257/tcp       # kube-controll
+    sudo firewall-cmd --permanent --add-port=10259/tcp       # kube-schedule
+    sudo firewall-cmd --reload
 fi
-
 
 # Useful for ansible administrators
 sudo yum install -y python3 python-argcomplete
 
-# Download last code from master branch
+# Download last code of official repo from master branch
 git clone https://github.com/kubernetes-sigs/kubespray.git
 cd kubespray || exit 1
 
 # Install dependencies from ``requirements.txt``
-# sudo yum install -y ansible-2.9.15 python-jinja2 python-netaddr
+# sudo yum install -y ansible-2.9.6 python-jinja2 python-netaddr
 sudo pip3 install -r requirements.txt
 
 # Copy ``inventory/sample`` as ``inventory/expert_cluster``
@@ -53,10 +65,9 @@ cp -rfp ../roles/adduser/defaults/main.yml roles/adduser/defaults/main.yml
 my_ip=$(hostname -i)
 declare -a IPS="($my_ip)"
 
-# To generate a new YAML inventory uncomment this line
-# CONFIG_FILE=inventory/expert/hosts.yaml python3 contrib/inventory_builder/inventory.py "${IPS[@]}"
+# Generate a new YAML inventory
+CONFIG_FILE=inventory/expert/hosts.yaml python3 contrib/inventory_builder/inventory.py "${IPS[@]}"
 ###########################################################
-
 
 # Review and change parameters under ``inventory/expert/group_vars``
 # cat inventory/expert/group_vars/all/all.yml
@@ -70,6 +81,7 @@ if ! sudo systemctl status containerd 1>/dev/null; then
     sudo yum install -y containerd.io
     sudo mkdir -p /etc/containerd
     sudo containerd config default | sudo tee /etc/containerd/config.toml
+    sudo systemctl start containerd
     sudo systemctl enable containerd
 fi
 
