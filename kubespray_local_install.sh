@@ -39,6 +39,7 @@ else
     sudo firewall-cmd --permanent --add-port=10255/tcp
     sudo firewall-cmd --permanent --add-port=10257/tcp       # kube-controll
     sudo firewall-cmd --permanent --add-port=10259/tcp       # kube-schedule
+    sudo firewall-cmd --permanent --add-port=8001/tcp       # dashboard
     sudo firewall-cmd --reload
 fi
 
@@ -99,9 +100,11 @@ fi
 ansible-playbook -i inventory/expert/hosts.yaml --become --become-user=root cluster.yml
 
 # Install and enable k8s dashboard
-sudo kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.5/aio/deploy/recommended.yaml
-sudo kubectl proxy --address='0.0.0.0'
+sudo /usr/local/bin/kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.5/aio/deploy/recommended.yaml
+sudo /usr/local/bin/kubectl proxy --address='0.0.0.0'
+echo -e "\n# please paste the following line on your workstation...\nssh -L 9999:127.0.0.1:8001 -N -f -l dashboard-admin $(hostname -i) "-L" local port forwarding\n\n# and paste the following token to get access to the dashboard\n`sudo /usr/local/bin/kubectl describe secret $(sudo /usr/local/bin/kubectl get secret | grep 'dashboard-admin' | awk '{print $1}') | grep 'token:' | awk -F':      ' '{print $2}'`"
 
+# Create k8s config file
 mkdir -p "$HOME/.kube"
 sudo cp -f -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
 sudo chown "$(id -u):$(id -g)" "$HOME/.kube/config"
