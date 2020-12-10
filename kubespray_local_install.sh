@@ -16,17 +16,17 @@ if [ "$SELINUXSTATUS" == "Enforcing" ]; then
 fi
 
 # Check firewall status
-FWSTATUS=$(sudo systemctl status firewalld >/dev/null);
+FWSTATUS=$(sudo firewall-cmd --state);
 if [ "$FWSTATUS" == "running" ]; then
-    firewall-cmd --permanent --add-port=6443/tcp        # kubelet
-    firewall-cmd --permanent --add-port=10250/tcp
-    firewall-cmd --permanent --add-port=2379-2380/tcp   # kube-apiserver
-    firewall-cmd --permanent --add-port=10251/tcp
-    firewall-cmd --permanent --add-port=10252/tcp
-    firewall-cmd --permanent --add-port=10255/tcp
-    firewall-cmd --permanent --add-port=10257/tcp       # kube-controll
-    firewall-cmd --permanent --add-port=10259/tcp       # kube-schedule
-    firewall-cmd –-reload
+    sudo firewall-cmd --permanent --add-port=6443/tcp        # kubelet
+    sudo firewall-cmd --permanent --add-port=10250/tcp
+    sudo firewall-cmd --permanent --add-port=2379-2380/tcp   # kube-apiserver
+    sudo firewall-cmd --permanent --add-port=10251/tcp
+    sudo firewall-cmd --permanent --add-port=10252/tcp
+    sudo firewall-cmd --permanent --add-port=10255/tcp
+    sudo firewall-cmd --permanent --add-port=10257/tcp       # kube-controll
+    sudo firewall-cmd --permanent --add-port=10259/tcp       # kube-schedule
+    sudo firewall-cmd –-reload
 fi
 
 
@@ -38,7 +38,6 @@ git clone https://github.com/kubernetes-sigs/kubespray.git
 cd kubespray || exit 1
 
 # Install dependencies from ``requirements.txt``
-# sudo yum install -y ansible-2.9.15 python-jinja2 python-netaddr
 sudo pip3 install -r requirements.txt
 
 # Copy ``inventory/sample`` as ``inventory/expert_cluster``
