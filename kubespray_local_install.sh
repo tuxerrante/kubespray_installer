@@ -43,10 +43,11 @@ else
     sudo firewall-cmd --reload
 fi
 
+
 # Useful for ansible administrators
 sudo yum install -y python3 python-argcomplete
 
-# Download last code of official repo from master branch
+# Download last code from master branch
 git clone https://github.com/kubernetes-sigs/kubespray.git
 cd kubespray || exit 1
 
@@ -63,12 +64,16 @@ cp -rfp ../roles/adduser/defaults/main.yml roles/adduser/defaults/main.yml
 ###########################################################
 # Update Ansible inventory file with inventory builder
 # declare -a IPS=(10.10.1.3 10.10.1.4 10.10.1.5)
-my_ip=$(hostname -i)
-declare -a IPS="($my_ip)"
+# declare -a IPS="($my_ip)"
 
-# Generate a new YAML inventory
-CONFIG_FILE=inventory/expert/hosts.yaml python3 contrib/inventory_builder/inventory.py "${IPS[@]}"
+my_ip=$(hostname -i)
+
+# To generate a new YAML inventory uncomment this line
+# CONFIG_FILE=inventory/expert/hosts.yaml python3 contrib/inventory_builder/inventory.py "${IPS[@]}"
+# OR replace value in place with sed
+sed -i "s/MY_IP/$my_ip/" ./inventory/expert/hosts.yaml
 ###########################################################
+
 
 # Review and change parameters under ``inventory/expert/group_vars``
 # cat inventory/expert/group_vars/all/all.yml
@@ -104,7 +109,6 @@ sudo /usr/local/bin/kubectl apply -f https://raw.githubusercontent.com/kubernete
 sudo /usr/local/bin/kubectl proxy --address='0.0.0.0'
 echo -e "\n# please paste the following line on your workstation...\nssh -L 9999:127.0.0.1:8001 -N -f -l dashboard-admin $(hostname -i) "-L" local port forwarding\n\n# and paste the following token to get access to the dashboard\n`sudo /usr/local/bin/kubectl describe secret $(sudo /usr/local/bin/kubectl get secret | grep 'dashboard-admin' | awk '{print $1}') | grep 'token:' | awk -F':      ' '{print $2}'`"
 
-# Create k8s config file
 mkdir -p "$HOME/.kube"
 sudo cp -f -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
 sudo chown "$(id -u):$(id -g)" "$HOME/.kube/config"
