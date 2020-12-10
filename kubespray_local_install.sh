@@ -18,15 +18,15 @@ fi
 # Check firewall status
 FWSTATUS=$(sudo systemctl status firewalld >/dev/null);
 if [ "$FWSTATUS" == "running" ]; then
-    firewall-cmd --permanent --add-port=6443/tcp        # kubelet
-    firewall-cmd --permanent --add-port=10250/tcp
-    firewall-cmd --permanent --add-port=2379-2380/tcp   # kube-apiserver
-    firewall-cmd --permanent --add-port=10251/tcp
-    firewall-cmd --permanent --add-port=10252/tcp
-    firewall-cmd --permanent --add-port=10255/tcp
-    firewall-cmd --permanent --add-port=10257/tcp       # kube-controll
-    firewall-cmd --permanent --add-port=10259/tcp       # kube-schedule
-    firewall-cmd –-reload
+    sudo firewall-cmd --permanent --add-port=6443/tcp        # kubelet
+    sudo firewall-cmd --permanent --add-port=10250/tcp
+    sudo firewall-cmd --permanent --add-port=2379-2380/tcp   # kube-apiserver
+    sudo firewall-cmd --permanent --add-port=10251/tcp
+    sudo firewall-cmd --permanent --add-port=10252/tcp
+    sudo firewall-cmd --permanent --add-port=10255/tcp
+    sudo firewall-cmd --permanent --add-port=10257/tcp       # kube-controll
+    sudo firewall-cmd --permanent --add-port=10259/tcp       # kube-schedule
+    sudo firewall-cmd –-reload
 fi
 
 
@@ -63,10 +63,10 @@ declare -a IPS="($my_ip)"
 # cat inventory/expert/group_vars/k8s-cluster/k8s-cluster.yml
 
 # Enable containerd runtime
-if ! sudo systemctl status containerd 1>/dev/null; then 
+if ! sudo systemctl status containerd 1>/dev/null; then
     sudo yum install -y yum-utils device-mapper-persistent-data lvm2
     sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-    sudo yum update -y 
+    sudo yum update -y
     sudo yum install -y containerd.io
     sudo mkdir -p /etc/containerd
     sudo containerd config default | sudo tee /etc/containerd/config.toml
@@ -74,10 +74,10 @@ if ! sudo systemctl status containerd 1>/dev/null; then
 fi
 
 # Enable docker
-if ! sudo systemctl status docker 1>/dev/null; then 
-    sudo yum update -y 
+if ! sudo systemctl status docker 1>/dev/null; then
+    sudo yum update -y
     sudo yum install -y docker
-	sudo systemctl restart containerd 
+	sudo systemctl restart containerd
     sudo systemctl enable containerd
 fi
 
