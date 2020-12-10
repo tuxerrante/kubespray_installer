@@ -89,8 +89,8 @@ fi
 if ! sudo systemctl status docker 1>/dev/null; then
     sudo yum update -y
     sudo yum install -y docker
-	sudo systemctl restart containerd
-    sudo systemctl enable containerd
+    sudo systemctl start docker
+    sudo systemctl enable docker
 fi
 
 ## Deploy Kubespray with Ansible Playbook - run the playbook as root
