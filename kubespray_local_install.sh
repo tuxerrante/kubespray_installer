@@ -15,30 +15,43 @@ if [ "$SELINUXSTATUS" == "Enforcing" ]; then
     exit 0
 fi
 
-# Check firewall status
-FWSTATUS=$(sudo systemctl status firewalld >/dev/null);
+# Check firewall status and add rules
+FWSTATUS=$(sudo firewall-cmd --state);
 if [ "$FWSTATUS" == "running" ]; then
-    firewall-cmd --permanent --add-port=6443/tcp        # kubelet
-    firewall-cmd --permanent --add-port=10250/tcp
-    firewall-cmd --permanent --add-port=2379-2380/tcp   # kube-apiserver
-    firewall-cmd --permanent --add-port=10251/tcp
-    firewall-cmd --permanent --add-port=10252/tcp
-    firewall-cmd --permanent --add-port=10255/tcp
-    firewall-cmd --permanent --add-port=10257/tcp       # kube-controll
-    firewall-cmd --permanent --add-port=10259/tcp       # kube-schedule
-    firewall-cmd –-reload
+    sudo firewall-cmd --permanent --add-port=6443/tcp        # kubelet
+    sudo firewall-cmd --permanent --add-port=10250/tcp
+    sudo firewall-cmd --permanent --add-port=2379-2380/tcp   # kube-apiserver
+    sudo firewall-cmd --permanent --add-port=10251/tcp
+    sudo firewall-cmd --permanent --add-port=10252/tcp
+    sudo firewall-cmd --permanent --add-port=10255/tcp
+    sudo firewall-cmd --permanent --add-port=10257/tcp       # kube-controll
+    sudo firewall-cmd --permanent --add-port=10259/tcp       # kube-schedule
+    sudo firewall-cmd --reload
+else
+    sudo yum install firewalld
+    sudo systemctl start firewalld
+    sudo systemctl enable firewalld
+    sudo firewall-cmd --permanent --add-port=6443/tcp        # kubelet
+    sudo firewall-cmd --permanent --add-port=10250/tcp
+    sudo firewall-cmd --permanent --add-port=2379-2380/tcp   # kube-apiserver
+    sudo firewall-cmd --permanent --add-port=10251/tcp
+    sudo firewall-cmd --permanent --add-port=10252/tcp
+    sudo firewall-cmd --permanent --add-port=10255/tcp
+    sudo firewall-cmd --permanent --add-port=10257/tcp       # kube-controll
+    sudo firewall-cmd --permanent --add-port=10259/tcp       # kube-schedule
+    sudo firewall-cmd --permanent --add-port=8001/tcp       # dashboard
+    sudo firewall-cmd --reload
 fi
-
 
 # Useful for ansible administrators
 sudo yum install -y python3 python-argcomplete
 
-# Download last code from master branch
+# Download last code of official repo from master branch
 git clone https://github.com/kubernetes-sigs/kubespray.git
 cd kubespray || exit 1
 
 # Install dependencies from ``requirements.txt``
-# sudo yum install -y ansible-2.9.15 python-jinja2 python-netaddr
+# sudo yum install -y ansible-2.9.6 python-jinja2 python-netaddr
 sudo pip3 install -r requirements.txt
 
 # Copy ``inventory/sample`` as ``inventory/expert_cluster``
@@ -53,32 +66,32 @@ cp -rfp ../roles/adduser/defaults/main.yml roles/adduser/defaults/main.yml
 my_ip=$(hostname -i)
 declare -a IPS="($my_ip)"
 
-# To generate a new YAML inventory uncomment this line
-# CONFIG_FILE=inventory/expert/hosts.yaml python3 contrib/inventory_builder/inventory.py "${IPS[@]}"
+# Generate a new YAML inventory
+CONFIG_FILE=inventory/expert/hosts.yaml python3 contrib/inventory_builder/inventory.py "${IPS[@]}"
 ###########################################################
-
 
 # Review and change parameters under ``inventory/expert/group_vars``
 # cat inventory/expert/group_vars/all/all.yml
 # cat inventory/expert/group_vars/k8s-cluster/k8s-cluster.yml
 
 # Enable containerd runtime
-if ! sudo systemctl status containerd 1>/dev/null; then 
+if ! sudo systemctl status containerd 1>/dev/null; then
     sudo yum install -y yum-utils device-mapper-persistent-data lvm2
     sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-    sudo yum update -y 
+    sudo yum update -y
     sudo yum install -y containerd.io
     sudo mkdir -p /etc/containerd
     sudo containerd config default | sudo tee /etc/containerd/config.toml
+    sudo systemctl start containerd
     sudo systemctl enable containerd
 fi
 
 # Enable docker
-if ! sudo systemctl status docker 1>/dev/null; then 
-    sudo yum update -y 
+if ! sudo systemctl status docker 1>/dev/null; then
+    sudo yum update -y
     sudo yum install -y docker
-	sudo systemctl restart containerd 
-    sudo systemctl enable containerd
+    sudo systemctl start docker
+    sudo systemctl enable docker
 fi
 
 ## Deploy Kubespray with Ansible Playbook - run the playbook as root
@@ -86,10 +99,12 @@ fi
 # installing packages and interacting with various systemd daemons.
 ansible-playbook -i inventory/expert/hosts.yaml --become --become-user=root cluster.yml
 
-# Install and enable k8s dashboard
-sudo kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.5/aio/deploy/recommended.yaml
-sudo kubectl proxy --address='0.0.0.0'
+# Install and enable k8s dashboard | Still to test!
+sudo /usr/local/bin/kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.5/aio/deploy/recommended.yaml
+sudo /usr/local/bin/kubectl proxy --address='0.0.0.0'
+echo -e "\n# please paste the following line on your workstation...\nssh -L 9999:127.0.0.1:8001 -N -f -l dashboard-admin $(hostname -i) "-L" local port forwarding\n\n# and paste the following token to get access to the dashboard\n`sudo /usr/local/bin/kubectl describe secret $(sudo /usr/local/bin/kubectl get secret | grep 'dashboard-admin' | awk '{print $1}') | grep 'token:' | awk -F':      ' '{print $2}'`"
 
+# Create k8s config file
 mkdir -p "$HOME/.kube"
 sudo cp -f -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
 sudo chown "$(id -u):$(id -g)" "$HOME/.kube/config"
