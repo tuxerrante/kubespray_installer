@@ -39,7 +39,7 @@ else
     sudo firewall-cmd --permanent --add-port=10255/tcp
     sudo firewall-cmd --permanent --add-port=10257/tcp       # kube-controll
     sudo firewall-cmd --permanent --add-port=10259/tcp       # kube-schedule
-    sudo firewall-cmd --permanent --add-port=8001/tcp       # dashboard
+    sudo firewall-cmd --permanent --add-port=8001/tcp        # dashboard
     sudo firewall-cmd --reload
 fi
 
@@ -65,7 +65,6 @@ cp -rfp ../roles/adduser/defaults/main.yml roles/adduser/defaults/main.yml
 # Update Ansible inventory file with inventory builder
 # declare -a IPS=(10.10.1.3 10.10.1.4 10.10.1.5)
 # declare -a IPS="($my_ip)"
-
 my_ip=$(hostname -i)
 
 # To generate a new YAML inventory uncomment this line
@@ -109,9 +108,12 @@ mkdir -p "$HOME/.kube"
 sudo cp -f -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
 sudo chown "$(id -u):$(id -g)" "$HOME/.kube/config"
 
-# Install and enable k8s dashboard | Still to test!
+# Install and enable k8s dashboard
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.5/aio/deploy/recommended.yaml
-kubectl proxy --address='0.0.0.0'
-echo -e "\n# please paste the following line on your workstation...\nssh -L 8001:127.0.0.1:8001 $(hostname -i)\n\n# and paste the following token to get access to the dashboard\n`sudo /usr/local/bin/kubectl describe secret $(sudo /usr/local/bin/kubectl get secret | grep 'dashboard-admin' | awk '{print $1}') | grep 'token:' | awk -F':      ' '{print $2}'`"
-
-
+if [[ $(kubectl get pods -n kube-system | grep dashboard | grep -v grep | awk '{print $3}') = "Running" ]]; then
+  echo -e "\n# please paste the following line on your workstation...\nssh -N -L 8001:127.0.0.1:8001 $(whoami)@$(hostname -i)\n\n# and paste the following token to get access to the dashboard\n`kubectl describe secret $(sudo /usr/local/bin/kubectl get secret | grep 'dashboard-admin' | awk '{print $1}') | grep 'token:' | awk -F':      ' '{print $2}'`"
+  echo -e "\n# then access the URL\nhttp://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/"
+  kubectl proxy --address='0.0.0.0'
+else
+  echo -e "\nplease check dashboard pod for any error"
+fi
